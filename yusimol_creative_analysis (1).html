@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8">
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:Arial,sans-serif; background:#fff; color:#1a1a1a; padding:16px; font-size:13px; }
+.section { font-size:11px; font-weight:500; color:#73726c; letter-spacing:.05em; text-transform:uppercase; margin:20px 0 10px; }
+.note { font-size:11px; color:#73726c; background:#f5f5f5; padding:8px 12px; border-radius:6px; margin-bottom:16px; }
+.tab-row { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+.tab-btn { font-size:11px; padding:5px 12px; border-radius:20px; border:1px solid #d0cec8; background:#fff; cursor:pointer; color:#73726c; transition:.15s; }
+.tab-btn.active { background:#1a1a1a; color:#fff; border-color:#1a1a1a; }
+.camp-block { display:none; }
+.camp-block.active { display:block; }
+.chart-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px; }
+.chart-box { background:#f5f5f5; border-radius:8px; padding:14px; }
+.chart-title { font-size:12px; color:#73726c; margin-bottom:10px; }
+.tbl { width:100%; border-collapse:collapse; font-size:11px; }
+.tbl th { padding:6px 8px; font-weight:500; color:#73726c; border-bottom:1px solid #e0e0e0; text-align:left; white-space:nowrap; }
+.tbl td { padding:5px 8px; border-bottom:1px solid #f0f0f0; }
+.tbl tr:hover td { background:#fafafa; }
+.num-r { text-align:right; }
+.bar-w { display:flex; align-items:center; gap:5px; }
+.bar-bg { flex:1; min-width:40px; height:5px; background:#e8e6e0; border-radius:3px; overflow:hidden; }
+.bar-f  { height:100%; border-radius:3px; }
+.badge { display:inline-block; font-size:10px; padding:1px 5px; border-radius:3px; font-weight:500; }
+.b-img { background:#E6F1FB; color:#0C447C; }
+.b-vid { background:#FAEEDA; color:#633806; }
+.b-ps  { background:#EAF3DE; color:#27500A; }
+.b-ban { background:#F3E5F5; color:#6A1B9A; }
+.hi-roas { color:#27500A; font-weight:500; }
+.hi-ctr  { color:#185FA5; font-weight:500; }
+.zero    { color:#c8c5bc; }
+</style>
+</head>
+<body>
+
+<p class="note">※ 소재별 광고그룹 중복 합산 기준 · ROAS = 공유항목 ROAS 소진 가중평균 · 4/2 기준</p>
+
+<div class="section">캠페인 선택</div>
+<div class="tab-row" id="tabs"></div>
+
+<!-- BAT -->
+<div class="camp-block" id="block-BAT"></div>
+<!-- TEST -->
+<div class="camp-block" id="block-TEST"></div>
+<!-- 파트너십 -->
+<div class="camp-block" id="block-파트너십"></div>
+<!-- 오특_퍼플치약 -->
+<div class="camp-block" id="block-오특_퍼플치약"></div>
+<!-- 오특_퍼플미백제 -->
+<div class="camp-block" id="block-오특_퍼플미백제"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const gc='rgba(0,0,0,0.05)', tc='#73726c';
+
+const campData = {
+  'BAT': [
+    {n:'이미지_04-여행용세트',  t:'img', imp:15198, clk:283,  ctr:1.86, spend:286939, buy:26,  roas:3.07, landing:183},
+    {n:'이미지_06-퍼플칫솔',    t:'img', imp:2846,  clk:51,   ctr:1.79, spend:72885,  buy:15,  roas:6.36, landing:36},
+    {n:'영상_02-화이트닝칫솔',  t:'vid', imp:1059,  clk:12,   ctr:1.13, spend:21663,  buy:2,   roas:2.99, landing:8},
+    {n:'이미지_02-화이트닝치약', t:'img', imp:1114,  clk:19,   ctr:1.71, spend:20400,  buy:0,   roas:0,    landing:10},
+    {n:'이미지_05-화이트닝칫솔', t:'img', imp:659,   clk:6,    ctr:0.91, spend:13120,  buy:2,   roas:3.43, landing:1},
+    {n:'영상_05-퍼플치약/츄라임',t:'vid', imp:378,   clk:5,    ctr:1.32, spend:11996,  buy:2,   roas:2.67, landing:3},
+    {n:'영상_03-퍼플칫솔/검색대',t:'vid', imp:229,   clk:16,   ctr:6.99, spend:5154,   buy:4,   roas:25.61,landing:13},
+    {n:'영상_08-화이트닝/아이스크림',t:'vid',imp:385,clk:1,    ctr:0.26, spend:9915,   buy:0,   roas:0,    landing:1},
+    {n:'영상_01-퍼플미백제/검색대',t:'vid',imp:227,  clk:5,    ctr:2.20, spend:5498,   buy:0,   roas:0,    landing:0},
+    {n:'영상_04-퍼플여행용/츄라임',t:'vid',imp:334,  clk:3,    ctr:0.90, spend:5727,   buy:0,   roas:0,    landing:1},
+  ],
+  'TEST': [
+    {n:'이미지_04-여행용세트',   t:'img', imp:30709, clk:509,  ctr:1.66, spend:409047, buy:27,  roas:2.45, landing:292},
+    {n:'이미지_02-화이트닝치약', t:'img', imp:4432,  clk:86,   ctr:1.94, spend:72442,  buy:10,  roas:5.39, landing:65},
+    {n:'이미지_06-퍼플칫솔',     t:'img', imp:1724,  clk:21,   ctr:1.22, spend:28146,  buy:5,   roas:3.75, landing:15},
+    {n:'영상_03-퍼플칫솔/검색대',t:'vid', imp:956,   clk:20,   ctr:2.09, spend:18453,  buy:5,   roas:6.07, landing:12},
+    {n:'영상_01-퍼플미백제/검색대',t:'vid',imp:532,  clk:6,    ctr:1.13, spend:8476,   buy:6,   roas:20.09,landing:4},
+    {n:'영상_05-퍼플치약/츄라임', t:'vid',imp:631,   clk:7,    ctr:1.11, spend:7675,   buy:2,   roas:7.94, landing:4},
+    {n:'이미지_05-화이트닝칫솔',  t:'img',imp:706,   clk:9,    ctr:1.27, spend:6894,   buy:2,   roas:4.64, landing:8},
+    {n:'영상_08-화이트닝/아이스크림',t:'vid',imp:745,clk:4,    ctr:0.54, spend:4983,   buy:3,   roas:10.75,landing:3},
+    {n:'영상_07-퍼플여행용/소리',  t:'vid',imp:331,  clk:1,    ctr:0.30, spend:2616,   buy:2,   roas:11.96,landing:2},
+    {n:'영상_02-화이트닝칫솔/츄라임',t:'vid',imp:642,clk:6,   ctr:0.93, spend:6303,   buy:0,   roas:0,    landing:3},
+  ],
+  '파트너십': [
+    {n:'파트너십애드_01-츄라임', t:'ps', imp:24904, clk:1017, ctr:4.08, spend:238458, buy:3, roas:0.27, landing:855},
+    {n:'파트너십애드_02-리아',   t:'ps', imp:9524,  clk:491,  ctr:5.16, spend:85229,  buy:0, roas:0,    landing:436},
+    {n:'파트너십애드_03-소리',   t:'ps', imp:27,    clk:0,    ctr:0,    spend:264,    buy:0, roas:0,    landing:0},
+  ],
+  '오특_퍼플치약': [
+    {n:'이미지_02-모델컷',       t:'img', imp:413064,clk:1662, ctr:0.40, spend:2035505,buy:153,roas:0.77, landing:863},
+    {n:'이미지_01-파우치',       t:'img', imp:178840,clk:986,  ctr:0.55, spend:1280390,buy:58, roas:1.05, landing:568},
+    {n:'우측배너_01-츄라임',     t:'ban', imp:48743, clk:289,  ctr:0.59, spend:612645, buy:24, roas:0.92, landing:162},
+    {n:'우측배너_02-모델영상',   t:'ban', imp:76481, clk:258,  ctr:0.34, spend:460994, buy:23, roas:0.86, landing:132},
+  ],
+  '오특_퍼플미백제': [
+    {n:'이미지_02-체크리스트',   t:'img', imp:95907, clk:359,  ctr:0.37, spend:585106, buy:25, roas:0.99, landing:201},
+    {n:'우측배너_02-모델영상',   t:'ban', imp:62310, clk:234,  ctr:0.38, spend:366960, buy:6,  roas:0.42, landing:100},
+    {n:'우측배너_01-츄라임',     t:'ban', imp:27274, clk:117,  ctr:0.43, spend:244453, buy:5,  roas:0.51, landing:63},
+    {n:'이미지_01-제품컷',       t:'img', imp:30088, clk:101,  ctr:0.34, spend:167222, buy:2,  roas:0.14, landing:50},
+  ],
+};
+
+const typeColor = {img:'#378ADD', vid:'#EF9F27', ps:'#3B6D11', ban:'#8E44AD'};
+const typeBadge = {img:'b-img', vid:'b-vid', ps:'b-ps', ban:'b-ban'};
+const typeLabel = {img:'이미지', vid:'영상', ps:'파트너십', ban:'배너'};
+
+const camps = Object.keys(campData);
+const tabsEl = document.getElementById('tabs');
+
+function buildBlock(camp) {
+  const rows = campData[camp];
+  const maxImp = Math.max(...rows.map(r=>r.imp));
+  const maxRoas = Math.max(...rows.map(r=>r.roas));
+  const maxCtr = Math.max(...rows.map(r=>r.ctr));
+
+  // 차트 데이터
+  const labels = rows.map(r => r.n.length > 14 ? r.n.slice(0,14)+'…' : r.n);
+  const spendSorted = [...rows].sort((a,b)=>b.spend-a.spend);
+  const roasSorted  = [...rows].filter(r=>r.roas>0).sort((a,b)=>b.roas-a.roas);
+  const buySorted   = [...rows].filter(r=>r.buy>0).sort((a,b)=>b.buy-a.buy);
+
+  const cid = camp.replace(/[^a-zA-Z0-9]/g,'_');
+
+  let html = `
+  <div class="chart-row">
+    <div class="chart-box">
+      <div class="chart-title">소재별 소진금액 (원)</div>
+      <div style="position:relative;height:${Math.max(160,spendSorted.length*38+60)}px;">
+        <canvas id="c_spend_${cid}"></canvas>
+      </div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-title">소재별 ROAS (x배) — 구매 발생 소재만</div>
+      <div style="position:relative;height:${Math.max(160,(roasSorted.length||1)*38+60)}px;">
+        <canvas id="c_roas_${cid}"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="section">소재별 상세 지표</div>
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>소재</th><th>유형</th>
+        <th class="num-r">노출</th>
+        <th>CTR</th>
+        <th class="num-r">소진(만원)</th>
+        <th class="num-r">구매</th>
+        <th class="num-r">ROAS</th>
+        <th class="num-r">랜딩PV</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  const tblRows = [...rows].sort((a,b)=>b.spend-a.spend);
+  tblRows.forEach(r => {
+    const hiRoas = r.roas >= 3;
+    const hiCtr  = r.ctr  >= 3;
+    html += `<tr>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.n}</td>
+      <td><span class="badge ${typeBadge[r.t]}">${typeLabel[r.t]}</span></td>
+      <td class="num-r">${r.imp.toLocaleString()}</td>
+      <td>
+        <div class="bar-w">
+          <div class="bar-bg"><div class="bar-f" style="width:${(r.ctr/maxCtr*100).toFixed(0)}%;background:${typeColor[r.t]}"></div></div>
+          <span class="${hiCtr?'hi-ctr':''}" style="min-width:38px;text-align:right;font-size:11px">${r.ctr.toFixed(2)}%</span>
+        </div>
+      </td>
+      <td class="num-r">${(r.spend/10000).toFixed(1)}</td>
+      <td class="num-r">${r.buy||'<span class="zero">-</span>'}</td>
+      <td class="num-r ${r.roas===0?'zero':(hiRoas?'hi-roas':'')}">${r.roas===0?'-':r.roas.toFixed(2)+'x'}</td>
+      <td class="num-r">${r.landing.toLocaleString()}</td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+
+  const block = document.getElementById('block-'+camp);
+  block.innerHTML = html;
+
+  // 소진 가로바
+  new Chart(document.getElementById('c_spend_'+cid), {
+    type:'bar',
+    data:{
+      labels: spendSorted.map(r=>r.n.length>16?r.n.slice(0,16)+'…':r.n),
+      datasets:[{
+        data: spendSorted.map(r=>r.spend),
+        backgroundColor: spendSorted.map(r=>typeColor[r.t]),
+        borderRadius:3,
+      }]
+    },
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:gc},ticks:{color:tc,font:{size:9},callback:v=>Math.round(v/10000)+'만'}},
+        y:{grid:{display:false},ticks:{color:tc,font:{size:9}}}
+      }
+    }
+  });
+
+  // ROAS 가로바
+  if(roasSorted.length>0){
+    new Chart(document.getElementById('c_roas_'+cid), {
+      type:'bar',
+      data:{
+        labels: roasSorted.map(r=>r.n.length>16?r.n.slice(0,16)+'…':r.n),
+        datasets:[{
+          data: roasSorted.map(r=>r.roas),
+          backgroundColor: roasSorted.map(r=>typeColor[r.t]),
+          borderRadius:3,
+        }]
+      },
+      options:{
+        indexAxis:'y', responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{grid:{color:gc},ticks:{color:tc,font:{size:9},callback:v=>v+'x'}},
+          y:{grid:{display:false},ticks:{color:tc,font:{size:9}}}
+        }
+      }
+    });
+  } else {
+    document.getElementById('c_roas_'+cid).parentElement.innerHTML = '<p style="text-align:center;color:#73726c;font-size:11px;padding:40px 0">구매 발생 소재 없음</p>';
+  }
+}
+
+// 탭 생성
+camps.forEach((camp,i) => {
+  const btn = document.createElement('button');
+  btn.className = 'tab-btn' + (i===0?' active':'');
+  btn.textContent = camp;
+  btn.onclick = () => {
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.camp-block').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('block-'+camp).classList.add('active');
+  };
+  tabsEl.appendChild(btn);
+  if(i===0) document.getElementById('block-'+camp).classList.add('active');
+});
+
+// 모든 블록 빌드
+camps.forEach(c => buildBlock(c));
+</script>
+</body>
+</html>
